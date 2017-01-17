@@ -13,6 +13,8 @@ Make a folder on whatever host computer you'll be using. Download `RedTwiBot.py`
     person2
     PERSON_Three
 
+Note: There should be no spaces in their names. I'm unfamiliar with how Twitch works, but if spaces would be an issue, just take the name in their URL.
+
 `sidebar.md` should be the regular markdown for your subreddit's sidebar, however, where you want the links to appear insert the following:
 
     ====

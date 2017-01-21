@@ -127,20 +127,20 @@ def walkThroughCredentials():
 				break
 		else:
 			print("No username entered. Try again.")
-	GAME_ALIASES = []
+	ACCEPTABLE_GAMES = []
 	print("This script will only add streamers to the sidebar if they are playing a game that is relevent to your subreddit. "
 		  "This script will refer to these as 'acceptable games'.\n"
 		  "Please add as many acceptable game titles as you would like.")
 	while True:
 		print("The current list of acceptable games is:")
-		for aGame in GAME_ALIASES:
+		for aGame in ACCEPTABLE_GAMES:
 			print("    "+aGame)
 		print()
 		game=input("Type in the name of one acceptable game: ")
 		if game:
 			confirm=input("Add '"+game+"' as an acceptable game?\n(y/n): ")
 			if confirm.lower() == 'y':
-				GAME_ALIASES.append(game)
+				ACCEPTABLE_GAMES.append(game)
 				print("Added "+game)
 			again=input("Add another?\n(y/n): ")
 			if again.lower() == 'n':
@@ -164,7 +164,7 @@ def walkThroughCredentials():
 				  "TWITCH_CLIENT_ID="+TWITCH_CLIENT_ID+"\n"+
 				  "MY_SUBREDDIT="+MY_SUBREDDIT+"\n"+
 				  "MY_PERSONAL_REDDIT_ACCOUNT="+MY_PERSONAL_REDDIT_ACCOUNT+"\n"+
-				  "GAME_ALIASES="+str(GAME_ALIASES)+"\n"+
+				  "ACCEPTABLE_GAMES="+str(ACCEPTABLE_GAMES)+"\n"+
 				  "REFRESH_INTERVAL_IN_SECONDS="+str(REFRESH_INTERVAL_IN_SECONDS)+"\n")
 		f.write(theFile)
 
@@ -179,7 +179,7 @@ while True:
 			TWITCH_CLIENT_ID=creds[4].replace("TWITCH_CLIENT_ID=",'')
 			MY_SUBREDDIT=creds[5].replace("MY_SUBREDDIT=",'')
 			MY_PERSONAL_REDDIT_ACCOUNT=creds[6].replace("MY_PERSONAL_REDDIT_ACCOUNT=",'')
-			GAME_ALIASES=eval(creds[7].replace("GAME_ALIASES=",''))
+			ACCEPTABLE_GAMES=eval(creds[7].replace("ACCEPTABLE_GAMES=",''))
 			REFRESH_INTERVAL_IN_SECONDS=eval(creds[8].replace("REFRESH_INTERVAL_IN_SECONDS=",''))
 			break
 	except:
@@ -251,7 +251,7 @@ while True:
 		if status['stream']:
 			print(streamer+" is playing "+status['stream']['game'])
 			# Check if they're streaming at all
-			if status['stream']['game'].lower().replace(' ','') in [ name.lower().replace(' ','') for name in GAME_ALIASES]:
+			if status['stream']['game'].lower().replace(' ','') in [ name.lower().replace(' ','') for name in ACCEPTABLE_GAMES]:
 				# Check if they're streaming the right game
 				streamerBox += "[" + streamer + "](" + status['stream']['channel']['url'] + ")\n\n"
 				# Makes a link to the stream with the streamer's username as the link title
@@ -270,7 +270,7 @@ while True:
 		praw.models.reddit.subreddit.SubredditModeration(reddit.subreddit(MY_SUBREDDIT)).update(description=newSidebar)
 		# Update the sidebar
 		with open(myPath+"sidebar.md",'w') as New:
-			New.write(sidebar.replace(oldStreamerBox.group(0),"====\n"+streamerBox+"\n===="))
+			New.write(sidebar.replace(oldStreamerBox.group(0),"===="+streamerBox+"\n===="))
 			# Save the new sidebar for the next update
 	print("Done. Sleeping")
 	sleep(REFRESH_INTERVAL_IN_SECONDS)

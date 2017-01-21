@@ -237,6 +237,9 @@ from time import sleep
 from json import loads
 from re import search
 from re import DOTALL as multiline
+
+# The first time the script updates after being started, it will update the sidebar.
+oldSidebar = None
 while True:
 	print("Checking streamers...")
 	streamers = open(myPath+"streamers.txt",'r').readlines()
@@ -256,7 +259,7 @@ while True:
 			if status['stream']['game'].lower().replace(' ','') in [ name.lower().replace(' ','') for name in ACCEPTABLE_GAMES]:
 				# Make a link to the stream with the streamer's username as the link title
 				streamerBox += "[" + streamer + "](" + status['stream']['channel']['url'] + ")\n\n"
-	if streamerBox == "\n\n**Streaming now:**\n\n":
+	if streamerBox == "\n\n****\n\n**Streaming now:**\n\n":
 		# Make a sad face if no-one is streaming
 		streamerBox += "None :(\n\n"
 	# Read the sidebar (on file)
@@ -264,14 +267,15 @@ while True:
 	# Find the replacement portion
 	oldStreamerBox = search("====(.*)====",sidebar,flags=multiline)
 	# If it's the same as it was last update, we skip all of this
-	if streamerBox != oldStreamerBox.group(1):
-		print("Stream statuses changed. Updating sidebar...")
-		# Replace everything between the ===='s, ===='s included
+	if sidebar.replace(oldStreamerBox.group(0),"===="+streamerBox+"====") != oldSidebar:
+		print("Sidebar changed. Updating...")
+		# Replace everything between the ===='s
 		newSidebar = sidebar.replace(oldStreamerBox.group(0),streamerBox)
 		# Update the sidebar
 		praw.models.reddit.subreddit.SubredditModeration(reddit.subreddit(MY_SUBREDDIT)).update(description=newSidebar)
 		with open(myPath+"sidebar.md",'w') as New:
 			# Save the new sidebar for the next update
 			New.write(sidebar.replace(oldStreamerBox.group(0),"===="+streamerBox+"===="))
+		oldSidebar = sidebar.replace(oldStreamerBox.group(0),"===="+streamerBox+"====")
 	print("Done. Sleeping")
 	sleep(REFRESH_INTERVAL_IN_SECONDS)

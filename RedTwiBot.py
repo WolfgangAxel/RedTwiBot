@@ -221,7 +221,8 @@ try:
 	mod = "requests"
 	from requests import get
 except:
-	exit("Please install "+mod+". Easiest way is to run 'pip3 install "+mod+"'")
+	exit("Please install "+mod+". Easiest way is to use pip. Check the following for basic instructions for your operating system:\n"
+		 "https://www.reddit.com/r/RequestABot/comments/3d3iss/a_comprehensive_guide_to_running_your_bot_that/")
 
 try:
 	reddit = praw.Reddit(client_id=REDDIT_BOT_CLIENT_ID,
@@ -244,33 +245,33 @@ while True:
 	streamerBox="\n\n****\n\n**Streaming now:**\n\n"
 	for streamer in streamers:
 		streamer = streamer.replace('\n','')
-		status = get("https://api.twitch.tv/kraken/streams/"+streamer,headers={'Accept':'application/vnd.twitchtv.v3+json','Client-ID':TWITCH_CLIENT_ID})
 		# Get their Twitch status
-		status = loads(str(status.content,'utf-8'))
+		status = get("https://api.twitch.tv/kraken/streams/"+streamer,headers={'Accept':'application/vnd.twitchtv.v3+json','Client-ID':TWITCH_CLIENT_ID})
 		# Parse it
+		status = loads(str(status.content,'utf-8'))
+		# Check if they're streaming at all
 		if status['stream']:
 			print(streamer+" is playing "+status['stream']['game'])
-			# Check if they're streaming at all
+			# Check if they're streaming the right game
 			if status['stream']['game'].lower().replace(' ','') in [ name.lower().replace(' ','') for name in ACCEPTABLE_GAMES]:
-				# Check if they're streaming the right game
+				# Make a link to the stream with the streamer's username as the link title
 				streamerBox += "[" + streamer + "](" + status['stream']['channel']['url'] + ")\n\n"
-				# Makes a link to the stream with the streamer's username as the link title
 	if streamerBox == "\n\n**Streaming now:**\n\n":
-		streamerBox += "None :(\n\n"
 		# Make a sad face if no-one is streaming
-	sidebar = open(myPath+"sidebar.md",'r').read()
+		streamerBox += "None :(\n\n"
 	# Read the sidebar (on file)
-	oldStreamerBox = search("====(.*)====",sidebar,flags=multiline)
+	sidebar = open(myPath+"sidebar.md",'r').read()
 	# Find the replacement portion
+	oldStreamerBox = search("====(.*)====",sidebar,flags=multiline)
+	# If it's the same as it was last update, we skip all of this
 	if streamerBox != oldStreamerBox.group(1):
 		print("Stream statuses changed. Updating sidebar...")
-		# If it's the same as it was last update, we skip all of this
-		newSidebar = sidebar.replace(oldStreamerBox.group(0),streamerBox)
 		# Replace everything between the ===='s, ===='s included
-		praw.models.reddit.subreddit.SubredditModeration(reddit.subreddit(MY_SUBREDDIT)).update(description=newSidebar)
+		newSidebar = sidebar.replace(oldStreamerBox.group(0),streamerBox)
 		# Update the sidebar
+		praw.models.reddit.subreddit.SubredditModeration(reddit.subreddit(MY_SUBREDDIT)).update(description=newSidebar)
 		with open(myPath+"sidebar.md",'w') as New:
-			New.write(sidebar.replace(oldStreamerBox.group(0),"===="+streamerBox+"\n===="))
 			# Save the new sidebar for the next update
+			New.write(sidebar.replace(oldStreamerBox.group(0),"===="+streamerBox+"===="))
 	print("Done. Sleeping")
 	sleep(REFRESH_INTERVAL_IN_SECONDS)

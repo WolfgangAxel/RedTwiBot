@@ -249,8 +249,8 @@ while True:
 		status = loads(str(status.content,'utf-8'))
 		# Parse it
 		if status['stream']:
-			# Check if they're streaming at all
 			print(streamer+" is playing "+status['stream']['game'])
+			# Check if they're streaming at all
 			if status['stream']['game'].lower().replace(' ','') in [ name.lower().replace(' ','') for name in GAME_ALIASES]:
 				# Check if they're streaming the right game
 				streamerBox += "[" + streamer + "](" + status['stream']['channel']['url'] + ")\n\n"
@@ -270,7 +270,6 @@ while True:
 		praw.models.reddit.subreddit.SubredditModeration(reddit.subreddit(MY_SUBREDDIT)).update(description=newSidebar)
 		# Update the sidebar
 		with open(myPath+"sidebar.md",'w') as New:
-			print(oldStreamerBox.group(1))
 			New.write(sidebar.replace(oldStreamerBox.group(0),"====\n"+streamerBox+"\n===="))
 			# Save the new sidebar for the next update
 	print("Done. Sleeping")

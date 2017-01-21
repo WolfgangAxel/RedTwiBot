@@ -253,7 +253,7 @@ while True:
 			print(streamer+" is playing "+status['stream']['game'])
 			if status['stream']['game'].lower().replace(' ','') in [ name.lower().replace(' ','') for name in GAME_ALIASES]:
 				# Check if they're streaming the right game
-				streamerBox += "[" + streamer + "](" + status['stream']['channel']['_links']['stream_key'] + ")\n\n"
+				streamerBox += "[" + streamer + "](" + status['stream']['channel']['url'] + ")\n\n"
 				# Makes a link to the stream with the streamer's username as the link title
 	if streamerBox == "\n\n**Streaming now:**\n\n":
 		streamerBox += "None :(\n\n"

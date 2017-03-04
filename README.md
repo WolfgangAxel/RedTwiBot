@@ -12,7 +12,7 @@ The script will ask for all necessary credentials on the first load. After that,
 
 The script will put the stream section at the bottom of the sidebar if it is not found elsewhere. Once made, you may move it around and what's above and below will be maintained. If you do move the section around, maintain the two line feeds above and below the two sets of `****` that sandwich the stream section.
 
-Any moderator of the subreddit may message the bot with one of the following (note the space):
+Any moderator of the subreddit may message the bot with one of the following (note the spaces):
 
 * `Add streamer: NAME`
 * `Add game: NAME`

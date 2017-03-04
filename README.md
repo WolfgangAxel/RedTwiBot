@@ -1,41 +1,23 @@
-# RedTwiBot
+# Sidebar Streamers
 A Reddit/Twitch bot that will update your subreddit statusbar when streamers are playing your sub's game.
 
+## Requirements
+
+* [Python 3](https://pyython.org/downloads/)
+ * [Praw](http://praw.readthedocs.io)
+ * [Requests](docs.python-requests.org/)
+
 ## Usage
-Make a folder on whatever host computer you'll be using. Download `RedTwiBot.py` into that folder, then create the following:
+The script will ask for all necessary credentials on the first load. After that, all information is pulled from and maintained in `credentials.ini`.
 
-* `streamers.txt`
-* `sidebar.md`
+The script will put the stream section at the bottom of the sidebar if it is not found elsewhere. Once made, you may move it around and what's above and below will be maintained. If you do move the section around, maintain the two line feeds above and below the two sets of `****` that sandwich the stream section.
 
-`streamers.txt` should be a list of usernames of Twitch users who frequently stream your game. It should be new line separated like so:
+Any moderator of the subreddit may message the bot with one of the following (note the space):
 
-    person-one
-    person2
-    PERSON_Three
+* `Add streamer: NAME`
+* `Add game: NAME`
+* `Remove streamer: NAME`
+* `Remove game: NAME`
 
-Note: There should be no spaces in their names. I'm unfamiliar with how Twitch works, but if spaces would be an issue, just take the name in their URL.
+These will add and remove streamers and games from the list of acceptable/approved streamers and games. If a streamer is in this list, their status will be retrieved every time the bot updates, and if they are listed as playing a game on the list of games, a link to their stream will be put in the sidebar. When the stream stops, the link will be removed.
 
-`sidebar.md` should be the regular markdown for your subreddit's sidebar, however, where you want the links to appear insert the following:
-
-    ====
-    
-    ====
-
-Text both before and after these spacers will be preserved. Anything between them will be ignored and overwritten.
-
-Lastly, before launching the script, you will need to open `RedTwiBot.py` and enter in the following in the appropriate areas near the top:
-
-* The reddit bot's:
- * Username
- * Password
- * Client-id
- * Secret
- * Subreddit (must be a moderator, obviously)
- * hoster's personal account's username (Reddit's API requires it)
-* The twitch account's client-id
-* Any number of game titles (If your game has multiple versions or multiple titles or whatever.)
-* Time in seconds between refreshes (Default is 180, a.k.a. 3 minutes)
-
-## How it works
-
-The bot first checks to make sure all files and variables are accounted for. If everything is good, it will try connecting to Reddit. If that is successful, it will read `streamers.txt` and download the stream status for each account in the list. If a stream is online and playing a game in your list of game names, the account name will be used as a link to the stream and will be added to your sidebar under a section called `Streaming now:`. If no-one on your list is streaming, the list will read `None :(`. If no new streams have started or ended since the last update, nothing happens. If there is a new stream or one ends, the sidebar will be updated. After the sidebar has (or hasn't) been updated, the bot will sleep for a duration of your choosing before starting the process over again from reading `streamers.txt`. This way, you may update the list of streamers at any time and the bot will always be using the updated list.

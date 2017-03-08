@@ -42,6 +42,9 @@ def loadConfig(myPath):
     if not conf.sections():
         print("No sections found in configuration file. Aborting!")
         raise Exception
+    if sorted(conf.sections()) != sorted(configSections):
+        print("Not all sections found. Aborting!")
+        raise Exception
     print("Found sections. Checking for values...")
     for item in conf.sections():
         if not [thing[1] for thing in conf[item].items()]:
@@ -289,6 +292,7 @@ except:
 myPath = re.search(r"[a-zA-Z0-9. ]*(.*)",__file__[::-1]).group(1)[::-1]
 
 try:
+    configSections = ["R","T","M","G","S"]
     conf = loadConfig(myPath)
 except Exception as e:
     input(str(e.args)+"\nPress enter to regenerate the configuration file.")

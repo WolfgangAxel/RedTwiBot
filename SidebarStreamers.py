@@ -38,14 +38,31 @@ def loadConfig(myPath):
     conf = configparser.RawConfigParser()
     conf.optionxform = lambda option: option
     conf.read(myPath+"configuration.ini")
+    print("Configuration file read. Checking for usable values.")
     if not conf.sections():
+        print("No sections found in configuration file. Aborting!")
         raise Exception
-    print("Loaded sections. Checking for values...")
+    if sorted(conf.sections()) != sorted(configSections):
+        print("Not all sections found. Aborting!")
+        raise Exception
+    print("Found sections. Checking for values...")
     for item in conf.sections():
         if not [thing[1] for thing in conf[item].items()]:
-            raise Exception
+            print("No values found for section "+item+".")
+            while True:
+                confirm = input("Proceed anyway? Proceeding without "
+                                "certain values might cause errors down "
+                                "the road (y/n)\n==> ")
+                if confirm.lower() == "y":
+                    print("Ignoring empty section.")
+                    break
+                elif confirm.lower() == "n":
+                    print("Aborting!")
+                    raise Exception
+                else:
+                    print("Confirmation failed.Restarting entry.")
         print("Found values for section "+item)
-    print("Configuration not blank. Using "+myPath+"configuration.ini")
+    print("Configuration seems usable. Using "+myPath+"configuration.ini")
     return conf
 
 def saveConfig():
@@ -140,7 +157,7 @@ def makeCreds(myPath):
             if thing:
                 confirm=input("Add '"+thing+"' as an acceptable "+things[:-1]+"?\n(y/n): ")
                 if confirm.lower() == 'y':
-                    dic[thing.lower()] = True
+                    dic[thing.lower().replace(":","").replace("=","")] = "Good"
                     print("Added "+thing)
             else:
                 print("No "+things[:-1]+" entered. Nothing to add.")
@@ -159,7 +176,7 @@ def addThing(thing,kind):
     """
     Add a thing to the list and save the file.
     """
-    conf[kind][thing.lower()] = "Good"
+    conf[kind][thing.lower().replace(":","").replace("=","")] = "Good"
     saveConfig()
 
 def delThing(thing,kind):
@@ -182,7 +199,7 @@ def updateSidebar():
         if status['stream']:
             print(streamer+" is playing "+status['stream']['game'])
             # Check if they're streaming the right game
-            if status['stream']['game'].lower().replace(' ','') in [ name.lower().replace(' ','') for name in conf["G"] ]:
+            if status['stream']['game'].lower().replace(' ','').replace(":","").replace("=","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
                 # Make a link to the stream with the streamer's username as the link title
                 statusSection += "* [" + streamer + "](" + status['stream']['channel']['url'] + ")\n\n"
     if statusSection == "\n\n****\n\n**Streaming now:**\n\n":
@@ -272,11 +289,13 @@ except:
 # Flip the filepath backwards, look for the first non-alphanumeric character,
 # grab the rest, then flip it forwards again. This theoretically gets the
 # folder the script is in without using the os module.
-myPath = re.search(r"[a-zA-Z0-9.]*(.*)",__file__[::-1]).group(1)[::-1]
-print(myPath)
+myPath = re.search(r"[a-zA-Z0-9. ]*(.*)",__file__[::-1]).group(1)[::-1]
+
 try:
+    configSections = ["R","T","M","G","S"]
     conf = loadConfig(myPath)
-except:
+except Exception as e:
+    print("Error details:\n"+str(e.args))
     conf = makeCreds(myPath)
 
 # Normalize credentials

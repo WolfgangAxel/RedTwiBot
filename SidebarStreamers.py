@@ -157,7 +157,7 @@ def makeCreds(myPath):
             if thing:
                 confirm=input("Add '"+thing+"' as an acceptable "+things[:-1]+"?\n(y/n): ")
                 if confirm.lower() == 'y':
-                    dic[thing.lower()] = "Good"
+                    dic[thing.lower().replace(":","")] = "Good"
                     print("Added "+thing)
             else:
                 print("No "+things[:-1]+" entered. Nothing to add.")
@@ -176,7 +176,7 @@ def addThing(thing,kind):
     """
     Add a thing to the list and save the file.
     """
-    conf[kind][thing.lower()] = "Good"
+    conf[kind][thing.lower().replace(":","")] = "Good"
     saveConfig()
 
 def delThing(thing,kind):
@@ -199,7 +199,7 @@ def updateSidebar():
         if status['stream']:
             print(streamer+" is playing "+status['stream']['game'])
             # Check if they're streaming the right game
-            if status['stream']['game'].lower().replace(' ','') in [ name.lower().replace(' ','') for name in conf["G"] ]:
+            if status['stream']['game'].lower().replace(' ','').replace(":","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
                 # Make a link to the stream with the streamer's username as the link title
                 statusSection += "* [" + streamer + "](" + status['stream']['channel']['url'] + ")\n\n"
     if statusSection == "\n\n****\n\n**Streaming now:**\n\n":

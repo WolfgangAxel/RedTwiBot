@@ -38,14 +38,28 @@ def loadConfig(myPath):
     conf = configparser.RawConfigParser()
     conf.optionxform = lambda option: option
     conf.read(myPath+"configuration.ini")
+    print("Configuration file read. Checking for usable values.")
     if not conf.sections():
+        print("No sections found in configuration file. Aborting!")
         raise Exception
-    print("Loaded sections. Checking for values...")
+    print("Found sections. Checking for values...")
     for item in conf.sections():
         if not [thing[1] for thing in conf[item].items()]:
-            raise Exception
+            print("No values found for section "+item+".")
+            while True:
+                confirm = input("Proceed anyway? Proceeding without "
+                                "certain values might cause errors down "
+                                "the road (y/n)\n==> ")
+                if confirm.lower() == "y":
+                    print("Ignoring empty section.")
+                    break
+                elif confirm.lower() == "n":
+                    print("Aborting!")
+                    raise Exception
+                else:
+                    print("Confirmation failed.Restarting entry.")
         print("Found values for section "+item)
-    print("Configuration not blank. Using "+myPath+"configuration.ini")
+    print("Configuration seems usable. Using "+myPath+"configuration.ini")
     return conf
 
 def saveConfig():
@@ -140,7 +154,7 @@ def makeCreds(myPath):
             if thing:
                 confirm=input("Add '"+thing+"' as an acceptable "+things[:-1]+"?\n(y/n): ")
                 if confirm.lower() == 'y':
-                    dic[thing.lower()] = True
+                    dic[thing.lower()] = "Good"
                     print("Added "+thing)
             else:
                 print("No "+things[:-1]+" entered. Nothing to add.")
@@ -272,11 +286,12 @@ except:
 # Flip the filepath backwards, look for the first non-alphanumeric character,
 # grab the rest, then flip it forwards again. This theoretically gets the
 # folder the script is in without using the os module.
-myPath = re.search(r"[a-zA-Z0-9.]*(.*)",__file__[::-1]).group(1)[::-1]
-print(myPath)
+myPath = re.search(r"[a-zA-Z0-9. ]*(.*)",__file__[::-1]).group(1)[::-1]
+
 try:
     conf = loadConfig(myPath)
-except:
+except Exception as e:
+    input(str(e.args)+"\nPress enter to regenerate the configuration file.")
     conf = makeCreds(myPath)
 
 # Normalize credentials

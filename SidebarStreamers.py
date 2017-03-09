@@ -157,7 +157,7 @@ def makeCreds(myPath):
             if thing:
                 confirm=input("Add '"+thing+"' as an acceptable "+things[:-1]+"?\n(y/n): ")
                 if confirm.lower() == 'y':
-                    dic[thing.lower().replace(":","")] = "Good"
+                    dic[thing.lower().replace(":","").replace("=","")] = "Good"
                     print("Added "+thing)
             else:
                 print("No "+things[:-1]+" entered. Nothing to add.")
@@ -176,7 +176,7 @@ def addThing(thing,kind):
     """
     Add a thing to the list and save the file.
     """
-    conf[kind][thing.lower().replace(":","")] = "Good"
+    conf[kind][thing.lower().replace(":","").replace("=","")] = "Good"
     saveConfig()
 
 def delThing(thing,kind):
@@ -196,12 +196,15 @@ def updateSidebar():
         # Parse it
         status = json.loads(str(status.content,'utf-8'))
         # Check if they're streaming at all
+        print(status+5)
         if status['stream']:
             print(streamer+" is playing "+status['stream']['game'])
             # Check if they're streaming the right game
-            if status['stream']['game'].lower().replace(' ','').replace(":","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
+            if status['stream']['game'].lower().replace(' ','').replace(":","").replace("=","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
                 # Make a link to the stream with the streamer's username as the link title
-                statusSection += "* [" + streamer + "](" + status['stream']['channel']['url'] + ")\n\n"
+                statusSection += "* [" + streamer + " - " + status['stream']['game'] + "](" + status['stream']['channel']['url'] + ")\n\n"
+        # Be nice to Twitch servers
+        time.sleep(1)
     if statusSection == "\n\n****\n\n**Streaming now:**\n\n":
         # Make a sad face if no-one is streaming
         statusSection += "* None :(\n\n"
@@ -295,7 +298,7 @@ try:
     configSections = ["R","T","M","G","S"]
     conf = loadConfig(myPath)
 except Exception as e:
-    input(str(e.args)+"\nPress enter to regenerate the configuration file.")
+    print("Error details:\n"+str(e.args))
     conf = makeCreds(myPath)
 
 # Normalize credentials
@@ -323,5 +326,13 @@ while True:
         updateSidebar()
         time.sleep(eval(conf["M"]["sleepTime"]))
     except Exception as e:
-        print("Error!\n\n"+str(e.args)+"\n\nRetrying in one minute.")
+        i=1
+        global e
+        while True:
+            lastError = eval("e.__traceback__"+".tb_next"*i)
+            if lastError == None:
+                lineNumber = eval("e.__traceback__"+".tb_next"*(i-1)+".tb_lineno")
+                break
+            i += 1
+        print("Error!\n\n  Line "+str(lineNumber)+" -> "+e.__str__()+"\n\nRetrying in one minute.")
         time.sleep(60)

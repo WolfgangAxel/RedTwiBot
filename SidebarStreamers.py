@@ -196,7 +196,6 @@ def updateSidebar():
         # Parse it
         status = json.loads(str(status.content,'utf-8'))
         # Check if they're streaming at all
-        print(status+5)
         if status['stream']:
             print(streamer+" is playing "+status['stream']['game'])
             # Check if they're streaming the right game

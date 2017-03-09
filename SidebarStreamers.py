@@ -326,7 +326,7 @@ while True:
         time.sleep(eval(conf["M"]["sleepTime"]))
     except Exception as e:
         i=1
-        global e
+        e=e
         while True:
             lastError = eval("e.__traceback__"+".tb_next"*i)
             if lastError == None:

@@ -321,9 +321,14 @@ print("Bot successfully loaded. Entering main loop.")
 ########################################################################
 while True:
     try:
+        startTime = time.time()
         checkInbox()
         updateSidebar()
-        time.sleep(eval(conf["M"]["sleepTime"]))
+        endTime = time.time()
+        # Sleep if we completed the job in under the refresh rate,
+        # otherwise restart the loop immediately
+        if eval(conf["M"]["sleepTime"]) - endTime + startTime > 0:
+            time.sleep(eval(conf["M"]["sleepTime"]) - endTime + startTime)
     except Exception as e:
         i=1
         e=e

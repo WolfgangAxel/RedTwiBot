@@ -196,12 +196,18 @@ def updateSidebar():
         # Parse it
         status = json.loads(str(status.content,'utf-8'))
         # Check if they're streaming at all
-        if status['stream']:
-            print(streamer+" is playing "+status['stream']['game'])
-            # Check if they're streaming the right game
-            if status['stream']['game'].lower().replace(' ','').replace(":","").replace("=","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
-                # Make a link to the stream with the streamer's username as the link title
-                statusSection += "* [" + streamer + " - " + status['stream']['game'] + "](" + status['stream']['channel']['url'] + ")\n\n"
+        try:
+            if status['stream']:
+                print(streamer+" is playing "+status['stream']['game'])
+                # Check if they're streaming the right game
+                if status['stream']['game'].lower().replace(' ','').replace(":","").replace("=","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
+                    # Make a link to the stream with the streamer's username as the link title
+                    statusSection += "* [" + streamer + " - " + status['stream']['game'] + "](" + status['stream']['channel']['url'] + ")\n\n"
+        except:
+            print("Error handling request. details:")
+            print(status)
+            print("Skipping until a fix is created")
+            continue            
         # Be nice to Twitch servers
         time.sleep(1)
     if statusSection == "\n\n****\n\n**Streaming now:**\n\n":
@@ -266,8 +272,6 @@ def checkInbox():
                           "* `Remove game: NAME`")
             #message.mark_read()
             print("Error handling message")
-    
-
 
 ########################################################################
 #                                                                      #

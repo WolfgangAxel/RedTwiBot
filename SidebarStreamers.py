@@ -189,12 +189,23 @@ def delThing(thing,kind):
 def updateSidebar():
     statusSection = "\n\n****\n\n**Streaming now:**\n\n"
     for streamer in conf["S"]:
-        # Get the status
-        status = requests.get("https://api.twitch.tv/kraken/streams/"+streamer,
-                              headers={'Accept':'application/vnd.twitchtv.v3+json',
-                                       'Client-ID':conf["T"]["c"]})
-        # Parse it
-        status = json.loads(str(status.content,'utf-8'))
+        fails = 0
+        while True:
+            # Get the status
+            status = requests.get("https://api.twitch.tv/kraken/streams/"+streamer,
+                                  headers={'Accept':'application/vnd.twitchtv.v3+json',
+                                           'Client-ID':conf["T"]["c"]})
+            # Be nice to Twitch servers
+            time.sleep(0.5)
+            # Parse it
+            status = json.loads(str(status.content,'utf-8'))
+            # If there were no errors, then keep going
+            # If there were errors, try again
+            # If there were 5 consecutive errors, skip it (later).
+            if not "error" in status or fails > 8:
+                break
+            fails += 1
+            print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
         # Check if they're streaming at all
         try:
             if status['stream']:
@@ -204,12 +215,13 @@ def updateSidebar():
                     # Make a link to the stream with the streamer's username as the link title
                     statusSection += "* [" + streamer + " - " + status['stream']['game'] + "](" + status['stream']['channel']['url'] + ")\n\n"
         except:
-            print("Error handling request. details:")
+            print("Status of "+streamer+" exceeded too many failed attempts. "
+                  "If problems persist with this streamer, open an issue here: "
+                  "https://github.com/WolfgangAxel/RedTwiBot/issues/new\n"
+                  "Request response was: ")
             print(status)
-            print("Skipping until a fix is created")
+            print("Skipping.")
             continue            
-        # Be nice to Twitch servers
-        time.sleep(1)
     if statusSection == "\n\n****\n\n**Streaming now:**\n\n":
         # Make a sad face if no-one is streaming
         statusSection += "* None :(\n\n"

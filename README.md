@@ -21,3 +21,6 @@ Any moderator of the subreddit may message the bot with one of the following (no
 
 These will add and remove streamers and games from the list of acceptable/approved streamers and games. If a streamer is in this list, their status will be retrieved every time the bot updates, and if they are listed as playing a game on the list of games, a link to their stream will be put in the sidebar. When the stream stops, the link will be removed.
 
+# Note
+
+Due to how `configparser` is used, colons (`:`) and equal signs (`=`) will be removed from streamer names and game titles. Keep this in mind if you plan to use the `remove` PM options.

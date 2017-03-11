@@ -189,22 +189,42 @@ def delThing(thing,kind):
 def updateSidebar():
     statusSection = "\n\n****\n\n**Streaming now:**\n\n"
     for streamer in conf["S"]:
-        # Get the status
-        status = requests.get("https://api.twitch.tv/kraken/streams/"+streamer,
-                              headers={'Accept':'application/vnd.twitchtv.v3+json',
-                                       'Client-ID':conf["T"]["c"]})
-        # Parse it
-        status = json.loads(str(status.content,'utf-8'))
+        fails = 0
+        while True:
+            # Get the status
+            status = requests.get("https://api.twitch.tv/kraken/streams/"+streamer,
+                                  headers={'Accept':'application/vnd.twitchtv.v3+json',
+                                           'Client-ID':conf["T"]["c"]})
+            # Be nice to Twitch servers
+            time.sleep(0.5)
+            # Parse it
+            status = json.loads(str(status.content,'utf-8'))
+            # If there were no errors, then keep going
+            # If there were errors, try again
+            # If there were 10 consecutive errors, skip it (handled later).
+            if not "error" in status or fails > 8:
+                break
+            fails += 1
+            print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
         # Check if they're streaming at all
-        if status['stream']:
-            print(streamer+" is playing "+status['stream']['game'])
-            # Check if they're streaming the right game
-            if status['stream']['game'].lower().replace(' ','').replace(":","").replace("=","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
-                # Make a link to the stream with the streamer's username as the link title
-                statusSection += "* [" + streamer + "](" + status['stream']['channel']['url'] + ")\n\n"
+        try:
+            if status['stream']:
+                print(streamer+" is playing "+status['stream']['game'])
+                # Check if they're streaming the right game
+                if status['stream']['game'].lower().replace(' ','').replace(":","").replace("=","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
+                    # Make a link to the stream with the streamer's username as the link title
+                    statusSection += "* [" + streamer + " - " + status['stream']['game'] + "](" + status['stream']['channel']['url'] + ")\n\n"
+        except:
+            print("Status of "+streamer+" exceeded too many failed attempts. "
+                  "If problems persist with this streamer, open an issue here: "
+                  "https://github.com/WolfgangAxel/RedTwiBot/issues/new\n"
+                  "Request response was: ")
+            print(status)
+            print("Skipping.")
+            continue            
     if statusSection == "\n\n****\n\n**Streaming now:**\n\n":
         # Make a sad face if no-one is streaming
-        statusSection += "* None :(\n\n"
+        statusSection += "* No active streams\n\n"
     # This ensures the sidebar is redownloaded on every check instead of using the cached one
     sub = R.subreddit(conf["M"]["mySub"])
     # Get sidebar
@@ -264,8 +284,6 @@ def checkInbox():
                           "* `Remove game: NAME`")
             #message.mark_read()
             print("Error handling message")
-    
-
 
 ########################################################################
 #                                                                      #
@@ -319,9 +337,22 @@ print("Bot successfully loaded. Entering main loop.")
 ########################################################################
 while True:
     try:
+        startTime = time.time()
         checkInbox()
         updateSidebar()
-        time.sleep(eval(conf["M"]["sleepTime"]))
+        endTime = time.time()
+        # Sleep if we completed the job in under the refresh rate,
+        # otherwise restart the loop immediately
+        if eval(conf["M"]["sleepTime"]) - endTime + startTime > 0:
+            time.sleep(eval(conf["M"]["sleepTime"]) - endTime + startTime)
     except Exception as e:
-        print("Error!\n\n"+str(e.args)+"\n\nRetrying in one minute.")
+        i=1
+        e=e
+        while True:
+            lastError = eval("e.__traceback__"+".tb_next"*i)
+            if lastError == None:
+                lineNumber = eval("e.__traceback__"+".tb_next"*(i-1)+".tb_lineno")
+                break
+            i += 1
+        print("Error!\n\n  Line "+str(lineNumber)+" -> "+e.__str__()+"\n\nRetrying in one minute.")
         time.sleep(60)

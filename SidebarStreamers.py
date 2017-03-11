@@ -201,7 +201,7 @@ def updateSidebar():
             status = json.loads(str(status.content,'utf-8'))
             # If there were no errors, then keep going
             # If there were errors, try again
-            # If there were 5 consecutive errors, skip it (later).
+            # If there were 10 consecutive errors, skip it (handled later).
             if not "error" in status or fails > 8:
                 break
             fails += 1
@@ -224,7 +224,7 @@ def updateSidebar():
             continue            
     if statusSection == "\n\n****\n\n**Streaming now:**\n\n":
         # Make a sad face if no-one is streaming
-        statusSection += "* None :(\n\n"
+        statusSection += "* No active streams\n\n"
     # This ensures the sidebar is redownloaded on every check instead of using the cached one
     sub = R.subreddit(conf["M"]["mySub"])
     # Get sidebar

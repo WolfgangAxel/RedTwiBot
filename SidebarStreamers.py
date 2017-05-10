@@ -338,9 +338,9 @@ def checkInbox():
     # Get current moderator list
     mods = [ mod.name for mod in R.subreddit(conf["M"]["mySub"]).moderator() ]
     for message in R.inbox.unread():
-        if not message.author.name in mods:
-            # If it's not from the moderators, we don't care
-            message.mark_read()
+        if not message.author.name in mods or message.subject in ["username mention","comment reply"]::
+            # If it's not from the moderators or a direct PM,
+            # we don't care
             continue
         print("Message from moderator!")
         fails = 0

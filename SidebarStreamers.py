@@ -161,7 +161,7 @@ def makeCreds(myPath):
     strmList = {}
     for things,dic in [["games",gameList],["twitch streamers",strmList]]:
         print("We will now build the list of acceptable "+things)
-            input("Press enter to continue... ")
+        input("Press enter to continue... ")
         while True:
             print("The current list of acceptable "+things+" is:")
             for thing in dic:
@@ -186,7 +186,7 @@ def makeCreds(myPath):
               "the channel ID for "
               "https://www.youtube.com/channel/UC4YaOt1yT-ZeyB0OmxHgolA?&ab_channel=A.I.Channel "
               "would be UC4YaOt1yT-ZeyB0OmxHgolA")
-            input("Press enter to continue... ")
+        input("Press enter to continue... ")
         while True:
             print("The current list of acceptable YouTube streamers is:")
             for thing in ytstList:
@@ -221,7 +221,7 @@ def addThing(thing,kind):
     """
     Add a thing to the list and save the file.
     """
-    if thing != "YS":
+    if kind != "YS":
         conf[kind][thing.lower().replace(":","").replace("=","")] = "Good"
     else:
         ID = re.search("(.+?) ",thing)
@@ -233,7 +233,7 @@ def delThing(thing,kind):
     """
     Remove a thing from the list and save the file.
     """
-    if thing != "YS":
+    if kind != "YS":
         _ = conf[kind].pop(thing.lower())
     else:
         _ = conf[kind].pop( [s for s in conf[kind] if conf[kind][s] == thing][0] )
@@ -366,13 +366,15 @@ def checkInbox():
                 continue
             except:
                 fails += 1
-        if fails == 4:
+        if fails == 6:
             message.reply("Error with request. Please use one of the following:\n\n"
-                          "* `Add streamer: NAME`\n\n"
+                          "* `Add YouTube streamer: CHANNEL-ID HUMAN-READABLE-NAME`\n\n"
+                          "* `Add Twitch streamer: NAME`\n\n"
                           "* `Add game: NAME`\n\n"
-                          "* `Remove streamer: NAME`\n\n"
+                          "* `Remove Twitch streamer: NAME`\n\n"
+                          "* `Remove YouTube streamer: HUMAN-READABLE-NAME`\n\n"
                           "* `Remove game: NAME`")
-            #message.mark_read()
+            message.mark_read()
             print("Error handling message")
 
 ########################################################################

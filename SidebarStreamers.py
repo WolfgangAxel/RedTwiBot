@@ -318,15 +318,15 @@ def checkInbox():
             continue
         print("Message from moderator!")
         fails = 0
-        for parser in ["Add streamer","Add game","Remove streamer","Remove game"]:
+        for parser in ["Add YouTube streamer","Add Twitch streamer","Add game","Remove YouTube streamer","Remove Twitch streamer","Remove game"]:
             try:
                 thing = re.search(parser+": (.*)",message.body).group(1)
                 figurer = parser.split(" ")
                 if figurer[0] == "Add":
-                    addThing(thing,figurer[1][0].upper())
+                    addThing(thing,figurer[1][0]+figurer[2][0].upper())
                 else:
                     try:
-                        delThing(thing,figurer[1][0].upper())
+                        delThing(thing,figurer[1][0]+figurer[2][0].upper())
                     except:
                         message.reply(thing+" not found, so not removed.")
                         message.mark_read()
@@ -334,7 +334,7 @@ def checkInbox():
                 if figurer[0][-1] == "d":
                     figurer[0] += "e"
                 figurer[0] += "d"
-                message.reply("Successfully "+figurer[0].lower()+" "+figurer[1])
+                message.reply("Successfully "+figurer[0].lower()+" "+figurer[2])
                 message.mark_read()
                 print("Successfully handled")
                 continue

@@ -159,16 +159,8 @@ def makeCreds(myPath):
     ################################################ Games and Streamers
     gameList = {}
     strmList = {}
-    ytstList = {}
-    for things,dic in [["games",gameList],["twitch streamers",strmList],["youtube channel IDs",ytstList]]:
+    for things,dic in [["games",gameList],["twitch streamers",strmList]]:
         print("We will now build the list of acceptable "+things)
-        if things == "youtube channel IDs":
-            print("\n***NOTICE***\n\nYouTube channel IDs are NOT the channel names!!!\n"
-                  "Find the channel ID by visiting their channel and copying "
-                  "the string of characters between '/channel/' and the first '?'. For example, "
-                  "the channel ID for "
-                  "https://www.youtube.com/channel/UC4YaOt1yT-ZeyB0OmxHgolA?&ab_channel=A.I.Channel "
-                  "would be UC4YaOt1yT-ZeyB0OmxHgolA")
             input("Press enter to continue... ")
         while True:
             print("The current list of acceptable "+things+" is:")
@@ -186,6 +178,32 @@ def makeCreds(myPath):
                     print("Added "+thing)
             else:
                 print("No "+things[:-1]+" entered. Nothing to add.")
+        ytstList = {}
+        print("We will now build the list of acceptable YouTube streamers. "
+              "\n***NOTICE***\n\nYouTube channel IDs are NOT the channel names!!!\n"
+              "Find the channel ID by visiting their channel and copying "
+              "the string of characters between '/channel/' and the first '?'. For example, "
+              "the channel ID for "
+              "https://www.youtube.com/channel/UC4YaOt1yT-ZeyB0OmxHgolA?&ab_channel=A.I.Channel "
+              "would be UC4YaOt1yT-ZeyB0OmxHgolA")
+            input("Press enter to continue... ")
+        while True:
+            print("The current list of acceptable YouTube streamers is:")
+            for thing in ytstList:
+                print("    "+thing+" - "+ytstList[thing])
+            print()
+            again=input("Add another?\n(y/n): ")
+            if again.lower() == 'n':
+                break
+            thing=input("Type in the CHANNEL ID of one acceptable YouTube streamer: ")
+            human=input("Type in the human-readable channel name for "+thing+": ")
+            if thing:
+                confirm=input("Add '"+human+"' ("+thing+") as an acceptable YouTube streamer?\n(y/n): ")
+                if confirm.lower() == 'y':
+                    dic[thing] = human
+                    print("Added "+thing)
+            else:
+                print("No YouTube streamer entered. Nothing to add.")
     
     conf["R"] = redCreds
     conf["T"] = twiCreds
@@ -203,14 +221,22 @@ def addThing(thing,kind):
     """
     Add a thing to the list and save the file.
     """
-    conf[kind][thing.lower().replace(":","").replace("=","")] = "Good"
+    if thing != "YS":
+        conf[kind][thing.lower().replace(":","").replace("=","")] = "Good"
+    else:
+        ID = re.search("(.+?) ",thing)
+        human = re.search(".+ (.+)")
+        conf[kind][ID] = human
     saveConfig()
 
 def delThing(thing,kind):
     """
     Remove a thing from the list and save the file.
     """
-    _ = conf[kind].pop(thing.lower())
+    if thing != "YS":
+        _ = conf[kind].pop(thing.lower())
+    else:
+        _ = conf[kind].pop( [s for s in conf[kind] if conf[kind][s] == thing][0] )
     saveConfig()
 
 def updateSidebar():

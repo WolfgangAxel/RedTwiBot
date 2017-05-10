@@ -14,10 +14,10 @@ The script will put the stream section at the bottom of the sidebar if it is not
 
 Any moderator of the subreddit may message the bot with one of the following (note the spaces):
 
-* `Add YouTube streamer: NAME`
+* `Add YouTube streamer: CHANNEL-ID HUMAN-READABLE-NAME`
 * `Add Twitch streamer: NAME`
 * `Add game: NAME`
-* `Remove YouTube streamer: NAME`
+* `Remove YouTube streamer: HUMAN-READABLE-NAME`
 * `Remove Twitch streamer: NAME`
 * `Remove game: NAME`
 

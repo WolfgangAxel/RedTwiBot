@@ -48,19 +48,14 @@ def loadConfig(myPath):
     print("Found sections. Checking for values...")
     for item in conf.sections():
         if not [thing[1] for thing in conf[item].items()]:
-            print("No values found for section "+item+".")
-            while True:
-                confirm = input("Proceed anyway? Proceeding without "
-                                "certain values might cause errors down "
-                                "the road (y/n)\n==> ")
-                if confirm.lower() == "y":
-                    print("Ignoring empty section.")
-                    break
-                elif confirm.lower() == "n":
-                    print("Aborting!")
-                    raise Exception
-                else:
-                    print("Confirmation failed.Restarting entry.")
+            print("No values found for section "+item+"."
+                  "Proceeding without certain values might "
+                  "cause errors down the road. If this is "
+                  "incorrect, kill this script now and adjust "
+                  "the values in "+myPath+"configuration.ini "
+                  "or regenerate "+myPath+"configuration.ini.")
+            time.sleep(3)
+            print("Ignoring empty section")
         print("Found values for section "+item)
     print("Configuration seems usable. Using "+myPath+"configuration.ini")
     return conf
@@ -124,6 +119,27 @@ def makeCreds(myPath):
             twiCreds["c"] = value
             break
         print("Confirmation failed. Restarting entry")
+    ############################################################### YouTube
+    print("Next, we will get the bot's Twitch information.")
+    input("Press enter to continue... ")
+    print(" 1) Go to https://console.developers.google.com/apis and sign in with "
+          "your or your bot's Google account.\n"
+          " 2) Click on the 'credentials' tab on the right\n"
+          " 3) Create a new project if you do not have one available to use. "
+          "Name it whatever you wish.\n"
+          " 4) Press the 'Create credentials' button, then 'API key' from the menu.\n"
+          " 5) You may use the key now, however it is advised to click the 'Restrict key' "
+          "button and restrict the key to 'IP address'. You may also rename the key "
+          "if you so wish.")
+    input("Press enter to continue... ")
+    gytCreds = {}
+    while True:
+        value = input("Please enter the bot's API key:\n==> ")
+        confirm = input("Is '"+value+"' correct? (y/n)\n==> ")
+        if confirm.lower() == "y":
+            gytCreds["k"] = value
+            break
+        print("Confirmation failed. Restarting entry")
     ############################################################### Misc
     print("Almost done! Just a few more items to define.")
     input("Press enter to continue... ")
@@ -143,8 +159,17 @@ def makeCreds(myPath):
     ################################################ Games and Streamers
     gameList = {}
     strmList = {}
-    for things,dic in [["games",gameList],["streamers",strmList]]:
+    ytstList = {}
+    for things,dic in [["games",gameList],["twitch streamers",strmList],["youtube channel IDs",ytstList]]:
         print("We will now build the list of acceptable "+things)
+        if things == "youtube channel IDs":
+            print("\n***NOTICE***\n\nYouTube channel IDs are NOT the channel names!!!\n"
+                  "Find the channel ID by visiting their channel and copying "
+                  "the string of characters between '/channel/' and the first '?'. For example, "
+                  "the channel ID for "
+                  "https://www.youtube.com/channel/UC4YaOt1yT-ZeyB0OmxHgolA?&ab_channel=A.I.Channel "
+                  "would be UC4YaOt1yT-ZeyB0OmxHgolA")
+            input("Press enter to continue... ")
         while True:
             print("The current list of acceptable "+things+" is:")
             for thing in dic:
@@ -157,16 +182,18 @@ def makeCreds(myPath):
             if thing:
                 confirm=input("Add '"+thing+"' as an acceptable "+things[:-1]+"?\n(y/n): ")
                 if confirm.lower() == 'y':
-                    dic[thing.lower().replace(":","").replace("=","")] = "Good"
+                    dic[thing] = "Good"
                     print("Added "+thing)
             else:
                 print("No "+things[:-1]+" entered. Nothing to add.")
     
     conf["R"] = redCreds
     conf["T"] = twiCreds
+    conf["Y"] = gytCreds
     conf["M"] = mscCreds
     conf["G"] = gameList
-    conf["S"] = strmList
+    conf["TS"] = strmList
+    conf["YS"] = ytstList
     saveConfig()
     return conf
 
@@ -188,7 +215,8 @@ def delThing(thing,kind):
 
 def updateSidebar():
     statusSection = "\n\n****\n\n**Streaming now:**\n\n"
-    for streamer in conf["S"]:
+    ############################################################ Twitch
+    for streamer in conf["TS"]:
         fails = 0
         while True:
             # Get the status
@@ -221,9 +249,45 @@ def updateSidebar():
                   "Request response was: ")
             print(status)
             print("Skipping.")
-            continue            
+            continue
+    ########################################################### Youtube
+    for streamer in conf["YS"]:
+        fails = 0
+        while True:
+            # Get the status
+            status = requests.get("https://www.googleapis.com/youtube/v3/search?part=snippet&channelId="+
+                                  streamer+"&type=video&eventType=live&key="+conf["Y"]["k"])
+            # Be nice to Google servers
+            time.sleep(0.5)
+            # Parse it
+            status = json.loads(str(status.content,'utf-8'))
+            # If there were no errors, then keep going
+            # If there were errors, try again
+            # If there were 10 consecutive errors, skip it (handled later).
+            if not "error" in status or fails > 8:
+                break
+            fails += 1
+            print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+        # Check if they're streaming at all
+        try:
+            if status['items']:
+                print(streamer+" is streaming "+status['items'][0]['snippet']['title'])
+                # Check if they're streaming the right game
+                for name in conf["G"]:
+                    if name.lower().replace(' ','') in status['items'][0]['snippet']['title'].lower().replace(' ','').replace(":","").replace("=",""):
+                        # Make a link to the stream with the streamer's username as the link title
+                        statusSection += "* [" + status['items'][0]['snippet']['channelTitle'] + " - " + status['items'][0]['snippet']['title'] + "](" + "https://www.youtube.com/watch?v=" + status['items'][0]['id']['videoId'] + ")\n\n"
+        except:
+            print("Status of "+streamer+" exceeded too many failed attempts. "
+                  "If problems persist with this streamer, open an issue here: "
+                  "https://github.com/WolfgangAxel/RedTwiBot/issues/new\n"
+                  "Request response was: ")
+            print(status)
+            print("Skipping.")
+            continue
+    
     if statusSection == "\n\n****\n\n**Streaming now:**\n\n":
-        # Make a sad face if no-one is streaming
+        # If no one is streaming
         statusSection += "* No active streams\n\n"
     # This ensures the sidebar is redownloaded on every check instead of using the cached one
     sub = R.subreddit(conf["M"]["mySub"])
@@ -310,7 +374,7 @@ except:
 myPath = re.search(r"[a-zA-Z0-9. ]*(.*)",__file__[::-1]).group(1)[::-1]
 
 try:
-    configSections = ["R","T","M","G","S"]
+    configSections = ["R","T","Y","M","G","TS","YS"]
     conf = loadConfig(myPath)
 except Exception as e:
     print("Error details:\n"+str(e.args))

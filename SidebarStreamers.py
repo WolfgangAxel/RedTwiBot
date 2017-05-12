@@ -178,32 +178,32 @@ def makeCreds(myPath):
                     print("Added "+thing)
             else:
                 print("No "+things[:-1]+" entered. Nothing to add.")
-        ytstList = {}
-        print("We will now build the list of acceptable YouTube streamers. "
-              "\n***NOTICE***\n\nYouTube channel IDs are NOT the channel names!!!\n"
-              "Find the channel ID by visiting their channel and copying "
-              "the string of characters between '/channel/' and the first '?'. For example, "
-              "the channel ID for "
-              "https://www.youtube.com/channel/UC4YaOt1yT-ZeyB0OmxHgolA?&ab_channel=A.I.Channel "
-              "would be UC4YaOt1yT-ZeyB0OmxHgolA")
-        input("Press enter to continue... ")
-        while True:
-            print("The current list of acceptable YouTube streamers is:")
-            for thing in ytstList:
-                print("    "+thing+" - "+ytstList[thing])
-            print()
-            again=input("Add another?\n(y/n): ")
-            if again.lower() == 'n':
-                break
-            thing=input("Type in the CHANNEL ID of one acceptable YouTube streamer: ")
-            human=input("Type in the human-readable channel name for "+thing+": ")
-            if thing:
-                confirm=input("Add '"+human+"' ("+thing+") as an acceptable YouTube streamer?\n(y/n): ")
-                if confirm.lower() == 'y':
-                    dic[thing] = human
-                    print("Added "+thing)
-            else:
-                print("No YouTube streamer entered. Nothing to add.")
+    ytstList = {}
+    print("We will now build the list of acceptable YouTube streamers. "
+          "\n***NOTICE***\n\nYouTube channel IDs are NOT the channel names!!!\n"
+          "Find the channel ID by visiting their channel and copying "
+          "the string of characters between '/channel/' and the first '?'. For example, "
+          "the channel ID for "
+          "https://www.youtube.com/channel/UC4YaOt1yT-ZeyB0OmxHgolA?&ab_channel=A.I.Channel "
+          "would be UC4YaOt1yT-ZeyB0OmxHgolA")
+    input("Press enter to continue... ")
+    while True:
+        print("The current list of acceptable YouTube streamers is:")
+        for thing in ytstList:
+            print("    "+thing+" - "+ytstList[thing])
+        print()
+        again=input("Add another?\n(y/n): ")
+        if again.lower() == 'n':
+            break
+        thing=input("Type in the CHANNEL ID of one acceptable YouTube streamer: ")
+        human=input("Type in the human-readable channel name for "+thing+": ")
+        if thing:
+            confirm=input("Add '"+human+"' ("+thing+") as an acceptable YouTube streamer?\n(y/n): ")
+            if confirm.lower() == 'y':
+                ytstList[thing] = human
+                print("Added "+thing)
+        else:
+            print("No YouTube streamer entered. Nothing to add.")
     
     conf["R"] = redCreds
     conf["T"] = twiCreds
@@ -297,7 +297,7 @@ def updateSidebar():
         # Check if they're streaming at all
         try:
             if status['items']:
-                print(streamer+" is streaming "+status['items'][0]['snippet']['title'])
+                print(conf["YS"][streamer]+" is streaming "+status['items'][0]['snippet']['title'])
                 # Check if they're streaming the right game
                 for name in conf["G"]:
                     if name.lower().replace(' ','') in status['items'][0]['snippet']['title'].lower().replace(' ','').replace(":","").replace("=",""):

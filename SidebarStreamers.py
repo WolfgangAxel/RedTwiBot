@@ -245,21 +245,26 @@ def updateSidebar():
     for streamer in conf["TS"]:
         fails = 0
         while True:
-            # Get the status
-            status = requests.get("https://api.twitch.tv/kraken/streams/"+streamer,
-                                  headers={'Accept':'application/vnd.twitchtv.v3+json',
-                                           'Client-ID':conf["T"]["c"]})
-            # Be nice to Twitch servers
-            time.sleep(0.5)
-            # Parse it
-            status = json.loads(str(status.content,'utf-8'))
-            # If there were no errors, then keep going
-            # If there were errors, try again
-            # If there were 10 consecutive errors, skip it (handled later).
-            if not "error" in status or fails > 8:
-                break
-            fails += 1
-            print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+            try:
+                # Get the status
+                status = requests.get("https://api.twitch.tv/kraken/streams/"+streamer,
+                                      headers={'Accept':'application/vnd.twitchtv.v3+json',
+                                               'Client-ID':conf["T"]["c"]})
+                # Be nice to Google servers
+                time.sleep(0.5)
+                # Parse it
+                status = json.loads(str(status.content,'utf-8'))
+                # If there were no errors, then keep going
+                # If there were errors, try again
+                # If there were 10 consecutive errors, skip it (handled later).
+                if not "error" in status or fails > 8:
+                    break
+                fails += 1
+                print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+            except Exception as e:
+                fails += 1
+                print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+                print("Error was more than an invalid response. Details:\n",e)
         # Check if they're streaming at all
         try:
             if status['stream']:
@@ -273,27 +278,32 @@ def updateSidebar():
                   "If problems persist with this streamer, open an issue here: "
                   "https://github.com/WolfgangAxel/RedTwiBot/issues/new\n"
                   "Request response was: ")
-            print(status)
+            print(str(status,"utf-8"))
             print("Skipping.")
             continue
     ########################################################### Youtube
     for streamer in conf["YS"]:
         fails = 0
         while True:
-            # Get the status
-            status = requests.get("https://www.googleapis.com/youtube/v3/search?part=snippet&channelId="+
-                                  streamer+"&type=video&eventType=live&key="+conf["Y"]["k"])
-            # Be nice to Google servers
-            time.sleep(0.5)
-            # Parse it
-            status = json.loads(str(status.content,'utf-8'))
-            # If there were no errors, then keep going
-            # If there were errors, try again
-            # If there were 10 consecutive errors, skip it (handled later).
-            if not "error" in status or fails > 8:
-                break
-            fails += 1
-            print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+            try:
+                # Get the status
+                status = requests.get("https://www.googleapis.com/youtube/v3/search?part=snippet&channelId="+
+                                      streamer+"&type=video&eventType=live&key="+conf["Y"]["k"])
+                # Be nice to Google servers
+                time.sleep(0.5)
+                # Parse it
+                status = json.loads(str(status.content,'utf-8'))
+                # If there were no errors, then keep going
+                # If there were errors, try again
+                # If there were 10 consecutive errors, skip it (handled later).
+                if not "error" in status or fails > 8:
+                    break
+                fails += 1
+                print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+            except Exception as e:
+                fails += 1
+                print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+                print("Error was more than an invalid response. Details:\n",e)
         # Check if they're streaming at all
         try:
             if status['items']:
@@ -308,7 +318,7 @@ def updateSidebar():
                   "If problems persist with this streamer, open an issue here: "
                   "https://github.com/WolfgangAxel/RedTwiBot/issues/new\n"
                   "Request response was: ")
-            print(status)
+            print(str(status,"utf-8"))
             print("Skipping.")
             continue
     

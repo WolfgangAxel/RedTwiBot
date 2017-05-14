@@ -318,7 +318,7 @@ def updateSidebar():
                   "If problems persist with this streamer, open an issue here: "
                   "https://github.com/WolfgangAxel/RedTwiBot/issues/new\n"
                   "Request response was: ")
-            print(str(status,"utf-8"))
+            print(str(status))
             print("Skipping.")
             continue
     

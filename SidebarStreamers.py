@@ -244,7 +244,7 @@ def updateSidebar():
     ############################################################ Twitch
     for streamer in conf["TS"]:
         fails = 0
-        while True:
+        while fails < 10:
             try:
                 # Get the status
                 status = requests.get("https://api.twitch.tv/kraken/streams/"+streamer,
@@ -257,7 +257,7 @@ def updateSidebar():
                 # If there were no errors, then keep going
                 # If there were errors, try again
                 # If there were 10 consecutive errors, skip it (handled later).
-                if not "error" in status or fails > 8:
+                if not "error" in status:
                     break
                 fails += 1
                 print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
@@ -278,13 +278,13 @@ def updateSidebar():
                   "If problems persist with this streamer, open an issue here: "
                   "https://github.com/WolfgangAxel/RedTwiBot/issues/new\n"
                   "Request response was: ")
-            print(str(status,"utf-8"))
+            print(str(status))
             print("Skipping.")
             continue
     ########################################################### Youtube
     for streamer in conf["YS"]:
         fails = 0
-        while True:
+        while fails < 10:
             try:
                 # Get the status
                 status = requests.get("https://www.googleapis.com/youtube/v3/search?part=snippet&channelId="+
@@ -296,13 +296,13 @@ def updateSidebar():
                 # If there were no errors, then keep going
                 # If there were errors, try again
                 # If there were 10 consecutive errors, skip it (handled later).
-                if not "error" in status or fails > 8:
+                if not "error" in status:
                     break
                 fails += 1
-                print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+                print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
             except Exception as e:
                 fails += 1
-                print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+                print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
                 print("Error was more than an invalid response. Details:\n",e)
         # Check if they're streaming at all
         try:
@@ -456,5 +456,5 @@ while True:
                 lineNumber = eval("e.__traceback__"+".tb_next"*(i-1)+".tb_lineno")
                 break
             i += 1
-        print("Error!\n\n  Line "+str(lineNumber)+" -> "+e.__str__()+"\n\nRetrying in one minute.")
-        time.sleep(60)
+        print("Error!\n\n  Line "+str(lineNumber)+" -> "+e.__str__())
+        time.sleep(eval(conf["M"]["sleepTime"]) - time.time() + startTime)

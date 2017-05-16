@@ -313,6 +313,36 @@ def updateSidebar():
                     if name.lower().replace(' ','') in status['items'][0]['snippet']['title'].lower().replace(' ','').replace(":","").replace("=",""):
                         # Make a link to the stream with the streamer's username as the link title
                         statusSection += "* [" + status['items'][0]['snippet']['channelTitle'] + " - " + status['items'][0]['snippet']['title'] + "](" + "https://www.youtube.com/watch?v=" + status['items'][0]['id']['videoId'] + ")\n\n"
+                        break
+                if status['items'][0]['snippet']['channelTitle'] in statusSection:
+                    continue
+                print("Acceptable game not found in title. Making additional request to search tags")
+                fails = 0
+                while fails < 10:
+                    try:
+                        # Get full description
+                        expand = requests.get("https://www.googleapis.com/youtube/v3/videos?part=snippet&id="+status['items'][0]['id']['videoId']+"&key="+conf["Y"]["k"])
+                        # Be nice to Google servers
+                        time.sleep(0.5)
+                        # Parse it
+                        expand = json.loads(str(expand.content,'utf-8'))
+                        # If there were no errors, then keep going
+                        # If there were errors, try again
+                        # If there were 10 consecutive errors, skip it (handled later).
+                        if not "error" in expand:
+                            break
+                        fails += 1
+                        print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+                    except Exception as e:
+                        fails += 1
+                        print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/10")
+                        print("Error was more than an invalid response. Details:\n",e)
+                # Check if they're streaming the right game
+                for name in conf["G"]:
+                    if name.lower().replace(' ','') in [ game.lower().replace(' ','').replace(":","").replace("=","") for game in expand['items'][0]['snippet']['tags'] ]:
+                        # Make a link to the stream with the streamer's username as the link title
+                        statusSection += "* [" + status['items'][0]['snippet']['channelTitle'] + " - " + status['items'][0]['snippet']['title'] + "](" + "https://www.youtube.com/watch?v=" + status['items'][0]['id']['videoId'] + ")\n\n"
+                        break
         except:
             print("Status of "+streamer+" exceeded too many failed attempts. "
                   "If problems persist with this streamer, open an issue here: "

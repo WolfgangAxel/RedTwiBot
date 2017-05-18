@@ -270,7 +270,6 @@ def updateSidebar():
             if status['stream']:
                 print(streamer+" is playing "+status['stream']['game'])
                 # Check if they're streaming the right game
-                print(status)
                 if status['stream']['game'].lower().replace(' ','').replace(":","").replace("=","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
                     # Make a link to the stream with the streamer's username as the link title
                     statusSection += "* [" + streamer + " - " + status['stream']['game'] + "](" + status['stream']['channel']['url'] + ")\n\n"

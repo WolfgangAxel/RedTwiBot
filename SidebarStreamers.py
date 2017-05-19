@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
@@ -120,7 +121,7 @@ def makeCreds(myPath):
             break
         print("Confirmation failed. Restarting entry")
     ############################################################### YouTube
-    print("Next, we will get the bot's Twitch information.")
+    print("Next, we will get the bot's YouTube information.")
     input("Press enter to continue... ")
     print(" 1) Go to https://console.developers.google.com/apis and sign in with "
           "your or your bot's Google account.\n"
@@ -158,26 +159,51 @@ def makeCreds(myPath):
     
     ################################################ Games and Streamers
     gameList = {}
-    strmList = {}
-    for things,dic in [["games",gameList],["twitch streamers",strmList]]:
-        print("We will now build the list of acceptable "+things)
-        input("Press enter to continue... ")
-        while True:
-            print("The current list of acceptable "+things+" is:")
-            for thing in dic:
-                print("    "+thing)
-            print()
-            again=input("Add another?\n(y/n): ")
-            if again.lower() == 'n':
-                break
-            thing=input("Type in the name of one acceptable "+things[:-1]+": ")
-            if thing:
-                confirm=input("Add '"+thing+"' as an acceptable "+things[:-1]+"?\n(y/n): ")
-                if confirm.lower() == 'y':
-                    dic[thing] = "Good"
+    print("We will now build the list of acceptable games")
+    input("Press enter to continue... ")
+    while True:
+        print("The current list of acceptable games is:")
+        for thing in gameList:
+            print("    "+thing)
+        print()
+        again=input("Add another?\n(y/n): ")
+        if again.lower() == 'n':
+            break
+        thing=input("Type in the name of one acceptable game: ")
+        if thing:
+            confirm=input("Add '"+thing+"' as an acceptable game?\n(y/n): ")
+            if confirm.lower() == 'y':
+                gameList[thing] = "Good"
+                print("Added "+thing)
+        else:
+            print("No game entered. Nothing to add.")
+    twstList = {}
+    print("We will now build the list of acceptable Twitch streamers.\n"
+          "Note: this will use the client ID you provided previously.")
+    input("Press enter to continue... ")
+    while True:
+        print("The current list of acceptable Twitch streamers is:")
+        for thing in twstList:
+            print("    "+thing+" - "+twstList[thing])
+        print()
+        again=input("Add another?\n(y/n): ")
+        if again.lower() == 'n':
+            break
+        thing=input("Type in the name of one acceptable Twitch streamer: ")
+        if thing:
+            confirm=input("Add '"+thing+"' as an acceptable Twitch streamer?\n(y/n): ")
+            if confirm.lower() == 'y':
+                print("Making request to obtain user ID for",thing)
+                try:
+                    status = requests.get("https://api.twitch.tv/kraken/users?login="+thing,
+                                headers={'Accept':'application/vnd.twitchtv.v5+json','Client-ID':twiCreds["c"]})
+                    status = json.loads(str(status.content,"utf-8"))
+                    twstList[status['users'][0]['_id']] = thing
                     print("Added "+thing)
-            else:
-                print("No "+things[:-1]+" entered. Nothing to add.")
+                except Exception as e:
+                    print("Error when adding streamer. Error details:\n   ",e)
+        else:
+            print("No game entered. Nothing to add.")
     ytstList = {}
     print("We will now build the list of acceptable YouTube streamers. "
           "\n***NOTICE***\n\nYouTube channel IDs are NOT the channel names!!!\n"
@@ -205,13 +231,13 @@ def makeCreds(myPath):
         else:
             print("No YouTube streamer entered. Nothing to add.")
     
-    conf["R"] = redCreds
-    conf["T"] = twiCreds
-    conf["Y"] = gytCreds
-    conf["M"] = mscCreds
-    conf["G"] = gameList
-    conf["TS"] = strmList
-    conf["YS"] = ytstList
+    conf["R"] = {key:redCreds[key] for key in sorted(redCreds)}
+    conf["T"] = {key:twiCreds[key] for key in sorted(twiCreds)}
+    conf["Y"] = {key:gytCreds[key] for key in sorted(gytCreds)}
+    conf["M"] = {key:mscCreds[key] for key in sorted(mscCreds)}
+    conf["G"] = {key:gameList[key] for key in sorted(gameList)}
+    conf["TS"] = {key:twstList[key] for key in sorted(twstList)}
+    conf["YS"] = {key:ytstList[key] for key in sorted(ytstList)}
     saveConfig()
     return conf
 
@@ -221,19 +247,26 @@ def addThing(thing,kind):
     """
     Add a thing to the list and save the file.
     """
-    if kind != "YS":
-        conf[kind][thing.lower().replace(":","").replace("=","")] = "Good"
-    else:
-        ID = re.search("(.+?) ",thing)
-        human = re.search(".+ (.+)")
+    if kind == "YS":
+        ID = re.search("(.+?) ",thing).group(1)
+        human = re.search(".+ (.+)").group(1)
         conf[kind][ID] = human
+    elif kind == "TS":
+        status = requests.get("https://api.twitch.tv/kraken/users?login="+thing,
+                    headers={'Accept':'application/vnd.twitchtv.v5+json','Client-ID':conf["T"]["c"]})
+        status = json.loads(str(status.content,"utf-8"))
+        if 'error' in status:
+            raise Exception("Error in response: "+status['message'])
+        conf[kind][status['users'][0]['_id']] = thing
+    else:
+        conf[kind][thing.lower().replace(":","").replace("=","")] = "Good"
     saveConfig()
 
 def delThing(thing,kind):
     """
     Remove a thing from the list and save the file.
     """
-    if kind != "YS":
+    if kind not in ["TS","YS"]:
         _ = conf[kind].pop(thing.lower())
     else:
         _ = conf[kind].pop( [s for s in conf[kind] if conf[kind][s] == thing][0] )
@@ -242,45 +275,48 @@ def delThing(thing,kind):
 def updateSidebar():
     statusSection = "\n\n****\n\n**Streaming now:**\n\n"
     ############################################################ Twitch
-    for streamer in conf["TS"]:
+    if len(conf["TS"]) <= 100:
+        streamerGroups = [",".join(conf["TS"])]
+    else:
+        index = 0
+        streamerGroups = []
+        while True:
+            streamerGroups.append( ",".join(conf["TS"][index*100:100*(index+1)]) )
+    paginated = []
+    for streamers in streamerGroups:
         fails = 0
         while fails < 3:
             try:
                 # Be nice to Twitch servers
                 time.sleep(0.5)
                 # Get the status
-                status = requests.get("https://api.twitch.tv/kraken/streams/"+streamer,
-                                      headers={'Accept':'application/vnd.twitchtv.v3+json',
+                status = requests.get("https://api.twitch.tv/kraken/streams/?channel="+streamers+"&?limit=100&?stream_type=live",
+                                      headers={'Accept':'application/vnd.twitchtv.v5+json',
                                                'Client-ID':conf["T"]["c"]})
-                # Parse it
+                # Parse it and add to paginated queue
                 status = json.loads(str(status.content,'utf-8'))
+                paginated.append(status)
                 # If there were no errors, then keep going
                 # If there were errors, try again
                 # If there were 10 consecutive errors, skip it (handled later).
                 if not "error" in status:
                     break
                 fails += 1
-                print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/3")
+                print("Error with request for Twitch streams. Attempts remaining: "+str(3-fails)+"/3")
             except Exception as e:
                 fails += 1
-                print("Error with request for "+streamer+"'s stream. Attempts remaining: "+str(10-fails)+"/3")
+                print("Error with request for Twitch streams. Attempts remaining: "+str(3-fails)+"/3")
                 print("Error was more than an invalid response. Details:\n",e)
-        # Check if they're streaming at all
-        try:
-            if status['stream']:
-                print(streamer+" is playing "+status['stream']['game'])
-                # Check if they're streaming the right game
-                if status['stream']['game'].lower().replace(' ','').replace(":","").replace("=","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
-                    # Make a link to the stream with the streamer's username as the link title
-                    statusSection += "* [" + streamer + " - " + status['stream']['game'] + "](" + status['stream']['channel']['url'] + ")\n\n"
-        except:
-            print("Status of "+streamer+" exceeded too many failed attempts. "
-                  "If problems persist with this streamer, open an issue here: "
-                  "https://github.com/WolfgangAxel/RedTwiBot/issues/new\n"
-                  "Request response was: ")
-            print(str(status))
-            print("Skipping.")
-            continue
+    streams = []
+    for status in paginated:
+        for stream in status['streams']:
+            streams.append(stream)
+    for stream in streams:
+        print(stream['channel']['name']+" is playing "+stream['game'])
+        # Check if they're streaming the right game
+        if stream['game'].lower().replace(' ','').replace(":","").replace("=","") in [ name.lower().replace(' ','') for name in conf["G"] ]:
+            # Make a link to the stream with the streamer's username as the link title
+            statusSection += "* [" + stream['channel']['name'] + " - " + stream['game'] + "](" + stream['channel']['url'] + ")\n\n"
     ########################################################### Youtube
     for streamer in conf["YS"]:
         fails = 0
@@ -289,72 +325,69 @@ def updateSidebar():
                 # Be nice to Google servers
                 time.sleep(0.5)
                 # Get the status
-                status = requests.get("https://www.googleapis.com/youtube/v3/search?part=snippet&channelId="+
-                                      streamer+"&type=video&eventType=live&key="+conf["Y"]["k"])
+                status = requests.get("https://www.youtube.com/channel/"+streamer+"/videos?view=2&amp;flow=grid")
                 # Parse it
-                status = json.loads(str(status.content,'utf-8'))
-                # If there were no errors, then keep going
-                # If there were errors, try again
-                # If there were 10 consecutive errors, skip it (handled later).
-                if not "error" in status:
-                    break
-                fails += 1
-                print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/3")
+                status = bs4.BeautifulSoup(str(status.content,"utf-8"),"html.parser")
+                break
             except Exception as e:
                 fails += 1
-                print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/3")
-                print("Error was more than an invalid response. Details:\n",e)
-        # Check if they're streaming at all
-        try:
-            if status['items']:
-                print(conf["YS"][streamer]+" is streaming "+status['items'][0]['snippet']['title'])
-                # Check if they're streaming the right game
-                for name in conf["G"]:
-                    if name.lower().replace(' ','') in status['items'][0]['snippet']['title'].lower().replace(' ','').replace(":","").replace("=",""):
-                        # Make a link to the stream with the streamer's username as the link title
-                        statusSection += "* [" + status['items'][0]['snippet']['channelTitle'] + " - " + status['items'][0]['snippet']['title'] + "](" + "https://www.youtube.com/watch?v=" + status['items'][0]['id']['videoId'] + ")\n\n"
-                        break
-                if status['items'][0]['snippet']['channelTitle'] in statusSection:
-                    continue
-                print("Acceptable game not found in title. Making additional request to search tags")
-                fails = 0
-                while fails < 3:
-                    try:
-                        # Be nice to Google servers
-                        time.sleep(0.5)
-                        # Get full description
-                        expand = requests.get("https://www.googleapis.com/youtube/v3/videos?part=snippet&id="+status['items'][0]['id']['videoId']+"&key="+conf["Y"]["k"])
-                        # Parse it
-                        expand = json.loads(str(expand.content,'utf-8'))
-                        # If there were no errors, then keep going
-                        # If there were errors, try again
-                        # If there were 10 consecutive errors, skip it (handled later).
-                        if not "error" in expand:
-                            break
-                        fails += 1
-                        print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/3")
-                    except Exception as e:
-                        fails += 1
-                        print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/3")
-                        print("Error was more than an invalid response. Details:\n",e)
-                # If they haven't tagged their stream, this will fail anyway
-                if 'tags' not in expand['items'][0]['snippet']:
-                    print("Streamer has not tagged their stream. Giving up.")
-                    continue 
-                # Check if they're streaming the right game
-                for name in conf["G"]:
-                    if name.lower().replace(' ','') in [ game.lower().replace(' ','').replace(":","").replace("=","") for game in expand['items'][0]['snippet']['tags'] ]:
-                        # Make a link to the stream with the streamer's username as the link title
-                        statusSection += "* [" + status['items'][0]['snippet']['channelTitle'] + " - " + status['items'][0]['snippet']['title'] + "](" + "https://www.youtube.com/watch?v=" + status['items'][0]['id']['videoId'] + ")\n\n"
-                        break
-        except Exception as e:
-            print("Status of "+streamer+" exceeded too many failed attempts. "
-                  "If problems persist with this streamer, open an issue here: "
-                  "https://github.com/WolfgangAxel/RedTwiBot/issues/new\n"
-                  "Request response was:\n"+str(status))
-            print("Error details:\n",e)
-            print("Skipping.")
+                print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(3-fails)+"/3")
+                print("Details:\n",e)
+        if fails > 2:
+            print("Maximum failed attempts hit. Skipping.")
             continue
+        # Get links for any livestreams found
+        for stream in status.find_all(attrs={"class":"yt-lockup-title "}):
+            streamInfo = stream.parent.find_all(attrs={"class":"yt-lockup-badges"})
+            if not streamInfo:
+                # Not actually live, just a live stream recording
+                continue
+            if streamInfo[0].ul.li.span.string != "Live now":
+                # False positive. Not quite sure how this happens but it does
+                continue
+            title = stream.a.string
+            if len(title) > 70:
+                title = title[:67]+"..."
+            print(status.title.string[2:-11],"is streaming",title,"("+stream.a['href']+")")
+            for name in conf["G"]:
+                if name.lower().replace(' ','') in stream.a.string.lower().replace(' ','').replace(":","").replace("=",""):
+                    # Make a link to the stream with the streamer's username as the link title
+                    statusSection += "* [" + status.title.string[2:-11] + " - " + title + "](" + "https://www.youtube.com" + stream.a['href'] + ")\n\n"
+                    break
+            if status.title.string[2:-11] in statusSection:
+                continue
+            print("Acceptable game not found in title. Making additional request to search tags")
+            fails = 0
+            while fails < 3:
+                try:
+                    # Be nice to Google servers
+                    time.sleep(0.5)
+                    # Get full description
+                    expand = requests.get("https://www.googleapis.com/youtube/v3/videos?part=snippet&id="+stream.a['href'].replace("/watch?v=","")+"&key="+conf["Y"]["k"])
+                    # Parse it
+                    expand = json.loads(str(expand.content,'utf-8'))
+                    # If there were no errors, then keep going
+                    # If there were errors, try again
+                    # If there were 10 consecutive errors, skip it (handled later).
+                    if not "error" in expand:
+                        break
+                    fails += 1
+                    print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/3")
+                except Exception as e:
+                    fails += 1
+                    print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/3")
+                    print("Error was more than an invalid response. Details:\n",e)
+            # If they haven't tagged their stream, this will fail anyway
+            if 'tags' not in expand['items'][0]['snippet']:
+                print("Streamer has not tagged their stream. Giving up.")
+                continue 
+            # Check if they're streaming the right game
+            for name in conf["G"]:
+                if name.lower().replace(' ','') in [ game.lower().replace(' ','').replace(":","").replace("=","") for game in expand['items'][0]['snippet']['tags'] ]:
+                    # Make a link to the stream with the streamer's username as the link title
+                    statusSection += "* [" + status.title.string[2:-11] + " - " + title + "](" + "https://www.youtube.com" + stream.a['href'] + ")\n\n"
+                    break
+                
     
     if statusSection == "\n\n****\n\n**Streaming now:**\n\n":
         # If no one is streaming
@@ -393,7 +426,12 @@ def checkInbox():
                 thing = re.search(parser+": (.*)",message.body).group(1)
                 figurer = parser.split(" ")
                 if figurer[0] == "Add":
-                    addThing(thing,figurer[1][0]+figurer[2][0].upper())
+                    try:
+                        addThing(thing,figurer[1][0]+figurer[2][0].upper())
+                    except Exception as e:
+                        message.reply("Error when adding "+thing+"\n\nDetails:"+str(e))
+                        message.mark_read()
+                        continue
                 else:
                     try:
                         delThing(thing,figurer[1][0]+figurer[2][0].upper())
@@ -433,7 +471,8 @@ try:
             "configparser",
             "time",
             "requests",
-            "json"]
+            "json",
+            "bs4"]
     for mod in mods:
         print("Importing "+mod)
         exec("import "+mod)
@@ -491,4 +530,6 @@ while True:
                 break
             i += 1
         print("Error!\n\n  Line "+str(lineNumber)+" -> "+e.__str__())
-        time.sleep(eval(conf["M"]["sleepTime"]) - time.time() + startTime)
+        endTime = time.time()
+        if eval(conf["M"]["sleepTime"]) - endTime + startTime > 0:
+            time.sleep(eval(conf["M"]["sleepTime"]) - endTime + startTime)

@@ -298,7 +298,7 @@ def updateSidebar():
                 paginated.append(status)
                 # If there were no errors, then keep going
                 # If there were errors, try again
-                # If there were 10 consecutive errors, skip it (handled later).
+                # If there were 3 consecutive errors, skip it (handled later).
                 if not "error" in status:
                     break
                 fails += 1
@@ -348,7 +348,7 @@ def updateSidebar():
             title = stream.a.string
             if len(title) > 70:
                 title = title[:67]+"..."
-            print(status.title.string[2:-11],"is streaming",title,"("+stream.a['href']+")")
+            print(status.title.string[2:-11],"is streaming",title)
             for name in conf["G"]:
                 if name.lower().replace(' ','') in stream.a.string.lower().replace(' ','').replace(":","").replace("=",""):
                     # Make a link to the stream with the streamer's username as the link title
@@ -368,14 +368,14 @@ def updateSidebar():
                     expand = json.loads(str(expand.content,'utf-8'))
                     # If there were no errors, then keep going
                     # If there were errors, try again
-                    # If there were 10 consecutive errors, skip it (handled later).
+                    # If there were 3 consecutive errors, skip it (handled later).
                     if not "error" in expand:
                         break
                     fails += 1
-                    print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/3")
+                    print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(3-fails)+"/3")
                 except Exception as e:
                     fails += 1
-                    print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(10-fails)+"/3")
+                    print("Error with request for "+conf["YS"][streamer]+"'s stream. Attempts remaining: "+str(3-fails)+"/3")
                     print("Error was more than an invalid response. Details:\n",e)
             # If they haven't tagged their stream, this will fail anyway
             if 'tags' not in expand['items'][0]['snippet']:
@@ -383,15 +383,14 @@ def updateSidebar():
                 continue 
             # Check if they're streaming the right game
             for name in conf["G"]:
-                if name.lower().replace(' ','') in [ game.lower().replace(' ','').replace(":","").replace("=","") for game in expand['items'][0]['snippet']['tags'] ]:
+                if (name.lower().replace(' ','') in [ game.lower().replace(' ','').replace(":","").replace("=","") for game in expand['items'][0]['snippet']['tags'] ]
+                and status.title.string[2:-11] not in statusSection):
                     # Make a link to the stream with the streamer's username as the link title
                     statusSection += "* [" + status.title.string[2:-11] + " - " + title + "](" + "https://www.youtube.com" + stream.a['href'] + ")\n\n"
-                    break
-                
-    
     if statusSection == "\n\n****\n\n**Streaming now:**\n\n":
         # If no one is streaming
         statusSection += "* No active streams\n\n"
+    print("All streamer statuses retrieved. Checking if sidebar should update...")
     # This ensures the sidebar is redownloaded on every check instead of using the cached one
     sub = R.subreddit(conf["M"]["mySub"])
     # Get sidebar

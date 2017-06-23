@@ -3,9 +3,9 @@ A Reddit/Twitch/YouTube bot that will update your subreddit statusbar when strea
 
 ## Requirements
 
-* [Python 3](https://pyython.org/downloads/)
+* [Python 3](https://python.org/downloads/)
  * [Praw](http://praw.readthedocs.io)
- * [Requests](docs.python-requests.org/)
+ * [Requests](http://docs.python-requests.org/)
 
 ## Usage
 The script will ask for all necessary credentials on the first load. After that, all information is pulled from and maintained in `credentials.ini`.
